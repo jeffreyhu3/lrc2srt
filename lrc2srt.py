@@ -1,6 +1,12 @@
 import os
 import re
 
+# each convert end and start time is same, each end of reading with next starting reading
+end_time_offset = 0.3
+
+# define end_time for the last line sentence, unit is second. For NEC set the end time as 1 hour
+end_time_stop = 3600
+
 def parse_lrc_timestamp(timestamp):
     try:
         minutes, seconds = timestamp.split(':')
@@ -21,8 +27,8 @@ def lrc_to_srt(lrc_file_path, srt_file_path):
         timestamp, text = match
         start_time = parse_lrc_timestamp(timestamp)
         if start_time is not None:
-            end_time = parse_lrc_timestamp(matches[idx + 1][0]) if idx + 1 < len(matches) else start_time + 1
-            subs.append(f"{len(subs) + 1}\n{format_time(start_time)} --> {format_time(end_time)}\n{text.strip()}\n")
+            end_time = parse_lrc_timestamp(matches[idx + 1][0]) - end_time_offset if idx + 1 < len(matches) else start_time + end_time_stop
+            subs.append(f"{len(subs) + 1}\n{format_time(start_time)} --> {format_time(end_time)}\n{text.strip()}\n\n")
 
     with open(srt_file_path, 'w', encoding='utf-8') as srt_file:
         srt_file.writelines(subs)
@@ -30,9 +36,9 @@ def lrc_to_srt(lrc_file_path, srt_file_path):
 def format_time(seconds):
     hours = int(seconds) // 3600
     minutes = (int(seconds) % 3600) // 60
-    seconds = int(seconds) % 60
+    seconds_ret = int(seconds) % 60
     milliseconds = int((seconds - int(seconds)) * 1000)
-    return f"{hours:02d}:{minutes:02d}:{seconds:02d},{milliseconds:03d}"
+    return f"{hours:02d}:{minutes:02d}:{seconds_ret:02d},{milliseconds:03d}"
 
 if __name__ == "__main__":
     # Prompt the user to enter the directory path
